@@ -860,6 +860,24 @@ publication = ">=0.0.3"
 typeguard = ">=2.13.3,<2.14.0"
 
 [[package]]
+name = "constructs-package"
+version = "0.7.1"
+description = "AWS CDK construct extensions"
+optional = false
+python-versions = "^3.11"
+files = []
+develop = false
+
+[package.dependencies]
+aws-cdk-lib = "^2.99.0"
+
+[package.source]
+type = "git"
+url = "https://github.com/Real-Life-IaC/cdk-constructs.git"
+reference = "0.7.1"
+resolved_reference = "3604042f70e5fabe6bbd4a051321715696bd3682"
+
+[[package]]
 name = "contextlib2"
 version = "21.6.0"
 description = "Backports and enhancements for the contextlib module"
@@ -3285,4 +3303,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "24df71e5ef8e615ce17fc79b66dae8126922e234a6db32b6fb8a61780880a5ac"
+content-hash = "d2f1081ec103f23d22a8d0e6475e3d8218d375427266a3140e401bfae0daf408"

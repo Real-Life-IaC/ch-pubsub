@@ -31,7 +31,7 @@ jobs:
         with:
           role-to-assume: ${{ vars.ROLE_TO_ASSUME }}
           aws-region: ${{ vars.AWS_REGION }}
-          stack-name: Frontend-sandbox
+          stack-name: PubSub-sandbox
 
   deploy-staging:
     if: github.ref_name == 'main'
@@ -47,7 +47,7 @@ jobs:
         with:
           role-to-assume: ${{ vars.ROLE_TO_ASSUME }}
           aws-region: ${{ vars.AWS_REGION }}
-          stack-name: Frontend-staging
+          stack-name: PubSub-staging
 
   deploy-production:
     if: github.ref_name == 'main'
@@ -66,4 +66,4 @@ jobs:
         with:
           role-to-assume: ${{ vars.ROLE_TO_ASSUME }}
           aws-region: ${{ vars.AWS_REGION }}
-          stack-name: Frontend-production
+          stack-name: PubSub-production

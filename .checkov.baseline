@@ -1,0 +1,76 @@
+{
+    "failed_checks": [
+        {
+            "file": "/PubSub-production.template.json",
+            "findings": [
+                {
+                    "resource": "AWS::IAM::Policy.BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36",
+                    "check_ids": [
+                        "CKV_AWS_111"
+                    ]
+                },
+                {
+                    "resource": "AWS::Lambda::Function.BucketNotificationsHandler050a0587b7544547bf325f094a3db8347ECC3691",
+                    "check_ids": [
+                        "CKV_AWS_115",
+                        "CKV_AWS_117"
+                    ]
+                },
+                {
+                    "resource": "AWS::SNS::Topic.PubSubStorageFileCreatedTopic305D9F65",
+                    "check_ids": [
+                        "CKV_AWS_26"
+                    ]
+                }
+            ]
+        },
+        {
+            "file": "/PubSub-sandbox.template.json",
+            "findings": [
+                {
+                    "resource": "AWS::IAM::Policy.BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36",
+                    "check_ids": [
+                        "CKV_AWS_111"
+                    ]
+                },
+                {
+                    "resource": "AWS::Lambda::Function.BucketNotificationsHandler050a0587b7544547bf325f094a3db8347ECC3691",
+                    "check_ids": [
+                        "CKV_AWS_115",
+                        "CKV_AWS_117"
+                    ]
+                },
+                {
+                    "resource": "AWS::SNS::Topic.PubSubStorageFileCreatedTopic305D9F65",
+                    "check_ids": [
+                        "CKV_AWS_26"
+                    ]
+                }
+            ]
+        },
+        {
+            "file": "/PubSub-staging.template.json",
+            "findings": [
+                {
+                    "resource": "AWS::IAM::Policy.BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36",
+                    "check_ids": [
+                        "CKV_AWS_111"
+                    ]
+                },
+                {
+                    "resource": "AWS::Lambda::Function.BucketNotificationsHandler050a0587b7544547bf325f094a3db8347ECC3691",
+                    "check_ids": [
+                        "CKV_AWS_115",
+                        "CKV_AWS_117"
+                    ]
+                },
+                {
+                    "resource": "AWS::SNS::Topic.PubSubStorageFileCreatedTopic305D9F65",
+                    "check_ids": [
+                        "CKV_AWS_26"
+                    ]
+                }
+            ]
+        }
+    ]
+}

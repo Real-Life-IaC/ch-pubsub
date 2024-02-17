@@ -1,5 +1,9 @@
 from typing import TypedDict
 
+import aws_cdk as cdk
+
+from aws_cdk import aws_events as events
+from aws_cdk import aws_events_targets as targets
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_kinesisfirehose as firehose
 from aws_cdk import aws_logs as logs
@@ -14,11 +18,12 @@ class Params(TypedDict):
     """Parameters for the B1PubSubFirehose class."""
 
     bucket: s3.Bucket
+    event_bus: events.EventBus
     buffer_interval_in_seconds: NotRequired[int]
     buffer_size_in_m_bs: NotRequired[int]
 
 
-class B1PubSubFirehose(Construct):
+class B1Firehose(Construct):
     """Ingest events from SNS into S3 with Firehose."""
 
     def __init__(
@@ -28,6 +33,7 @@ class B1PubSubFirehose(Construct):
 
         # Read the kwargs
         bucket = kwargs["bucket"]
+        event_bus = kwargs["event_bus"]
         buffer_interval_in_seconds = kwargs.get(
             "buffer_interval_in_seconds", 60
         )
@@ -46,57 +52,23 @@ class B1PubSubFirehose(Construct):
         # Create role and policies for Kinesis Firehose
         delivery_role = iam.Role(
             scope=self,
-            id="DeliveryStreamRole",
+            id="DeliveryRole",
             assumed_by=iam.ServicePrincipal(service="firehose.amazonaws.com"),  # type: ignore
         )
 
         # Allow Firehose to write to S3
-        delivery_role.add_to_policy(
-            statement=iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=[
-                    "s3:GetObject*",
-                    "s3:GetBucket*",
-                    "s3:List*",
-                    "s3:DeleteObject*",
-                    "s3:PutObject",
-                    "s3:PutObjectLegalHold",
-                    "s3:PutObjectRetention",
-                    "s3:PutObjectTagging",
-                    "s3:PutObjectVersionTagging",
-                    "s3:Abort*",
-                ],
-                resources=[
-                    bucket.bucket_arn,
-                    bucket.arn_for_objects(key_pattern="*"),
-                ],
-            )
-        )
+        bucket.grant_write(delivery_role)
 
         # Allow Firehose to write to CloudWatch Logs
-        delivery_role.add_to_policy(
-            statement=iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=["logs:CreateLogStream", "logs:PutLogEvents"],
-                resources=[log_group.log_group_arn],
-            )
-        )
+        log_group.grant_write(delivery_role)
 
         # Create Firehose inline processing configuration
         # This extracts information from the event to be used in the prefix/partitioning
-        # All events reveived by firehose must have '_event_emmiter' and '_event_name' keys
+        # All events reveived by firehose must have 'detail-type' and 'source' keys
+        # They come as default if using EventBridge
         processing_configuration = firehose.CfnDeliveryStream.ProcessingConfigurationProperty(  # noqa: B950
             enabled=True,
             processors=[
-                firehose.CfnDeliveryStream.ProcessorProperty(
-                    type="RecordDeAggregation",
-                    parameters=[
-                        firehose.CfnDeliveryStream.ProcessorParameterProperty(
-                            parameter_name="SubRecordType",
-                            parameter_value="JSON",
-                        ),
-                    ],
-                ),
                 firehose.CfnDeliveryStream.ProcessorProperty(
                     type="AppendDelimiterToRecord",
                     parameters=[
@@ -111,7 +83,7 @@ class B1PubSubFirehose(Construct):
                     parameters=[
                         firehose.CfnDeliveryStream.ProcessorParameterProperty(
                             parameter_name="MetadataExtractionQuery",
-                            parameter_value="{event_publisher:.event_publisher, event_name:.event_name}",  # noqa: B950
+                            parameter_value='{source:.source, detail_type:."detail-type"}',  # noqa: B950
                         ),
                         firehose.CfnDeliveryStream.ProcessorParameterProperty(
                             parameter_name="JsonParsingEngine",
@@ -144,7 +116,7 @@ class B1PubSubFirehose(Construct):
             ),
             processing_configuration=processing_configuration,
             error_output_prefix="errors/!{firehose:error-output-type}/date=!{timestamp:yyyy}-!{timestamp:MM}-!{timestamp:dd}/",
-            prefix="!{partitionKeyFromQuery:event_publisher}/!{partitionKeyFromQuery:event_name}/date=!{timestamp:yyyy}-!{timestamp:MM}-!{timestamp:dd}/",
+            prefix="!{partitionKeyFromQuery:source}/!{partitionKeyFromQuery:detail_type}/date=!{timestamp:yyyy}-!{timestamp:MM}-!{timestamp:dd}/",
         )
 
         # Create Firehose Delivery Stream
@@ -162,6 +134,17 @@ class B1PubSubFirehose(Construct):
         self.delivery_stream.node.add_dependency(log_stream)
         self.delivery_stream.node.add_dependency(log_group)
 
+        # Crete event Bridge rule to send all events to Firehose
+        events.Rule(
+            scope=self,
+            id="S3DeliveryStreamRule",
+            event_bus=event_bus,
+            event_pattern=events.EventPattern(
+                account=[cdk.Aws.ACCOUNT_ID]
+            ),
+            targets=[targets.KinesisFirehoseStream(stream=self.delivery_stream)],  # type: ignore
+        )
+
         # Export Firehose ARN
         ssm.StringParameter(
             scope=self,
@@ -169,36 +152,4 @@ class B1PubSubFirehose(Construct):
             string_value=self.delivery_stream.attr_arn,
             description="S3 Delivery Stream ARN",
             parameter_name="/pubsub/s3-delivery-stream/arn",
-        )
-
-        # Create role to allow SNS to publish events to Firehose
-        self.firehose_subscription_role = iam.Role(
-            scope=self,
-            id="FirehoseSubscriptionRole",
-            description="Role assumed by SNS to publish events to Kinesis Firehose",
-            assumed_by=iam.ServicePrincipal(service="sns.amazonaws.com"),  # type: ignore
-        )
-
-        # Add policies to role
-        self.firehose_subscription_role.add_to_policy(
-            statement=iam.PolicyStatement(
-                actions=[
-                    "firehose:DescribeDeliveryStream",
-                    "firehose:ListDeliveryStreams",
-                    "firehose:ListTagsForDeliveryStream",
-                    "firehose:PutRecord",
-                    "firehose:PutRecordBatch",
-                ],
-                effect=iam.Effect.ALLOW,
-                resources=[self.delivery_stream.attr_arn],
-            )
-        )
-
-        # Export SNS Subscription Role ARN
-        ssm.StringParameter(
-            scope=self,
-            id="FirehoseSubscriptionRoleArn",
-            string_value=self.firehose_subscription_role.role_arn,
-            description="Firehose Subscription Role ARN",
-            parameter_name="/pubsub/firehose-subscription-role/arn",
         )

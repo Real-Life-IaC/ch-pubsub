@@ -1,6 +1,7 @@
 from constructs import Construct
-from infra.constructs.b1.firehose import B1PubSubFirehose
-from infra.constructs.b1.storage import B1PubSubStorage
+from infra.constructs.b1.eventbus import B1EventBus
+from infra.constructs.b1.firehose import B1Firehose
+from infra.constructs.b1.storage import B1Storage
 
 
 class B2PubSub(Construct):
@@ -13,6 +14,12 @@ class B2PubSub(Construct):
     ) -> None:
         super().__init__(scope, id)
 
-        storage = B1PubSubStorage(scope=self, id="Storage")
+        event_bus = B1EventBus(scope=self, id="EventBus")
+        storage = B1Storage(scope=self, id="Storage")
 
-        B1PubSubFirehose(scope=self, id="Firehose", bucket=storage.bucket)
+        B1Firehose(
+            scope=self,
+            id="Firehose",
+            bucket=storage.bucket,
+            event_bus=event_bus.event_bus,
+        )

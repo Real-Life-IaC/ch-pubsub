@@ -1,13 +1,11 @@
 import aws_cdk as cdk
 
 from aws_cdk import aws_s3 as s3
-from aws_cdk import aws_s3_notifications as s3n
-from aws_cdk import aws_sns as sns
 from aws_cdk import aws_ssm as ssm
 from constructs import Construct
 
 
-class B1PubSubStorage(Construct):
+class B1Storage(Construct):
     """Store events in S3 and notify a topic when object is created"""
 
     def __init__(
@@ -37,6 +35,8 @@ class B1PubSubStorage(Construct):
             server_access_logs_bucket=access_logs_bucket,
             server_access_logs_prefix="S3Logs/",
             transfer_acceleration=False,
+            # Sends events to the default event bus
+            event_bridge_enabled=True,
         )
 
         self.bucket.add_lifecycle_rule(
@@ -47,16 +47,6 @@ class B1PubSubStorage(Construct):
                 )
             ],
         )
-
-        # Create topic to receive event from s3
-        self.topic = sns.Topic(
-            scope=self,
-            id="FileCreatedTopic",
-            display_name="pubsub-FileCreated",
-        )
-
-        # Notify topic when object is created
-        self.bucket.add_object_created_notification(dest=s3n.SnsDestination(topic=self.topic))  # type: ignore
 
         # Add bucket ARN to SSM
         ssm.StringParameter(

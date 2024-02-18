@@ -34,7 +34,6 @@ class B1Storage(Construct):
             object_ownership=s3.ObjectOwnership.BUCKET_OWNER_ENFORCED,
             server_access_logs_bucket=access_logs_bucket,
             server_access_logs_prefix="S3Logs/",
-            transfer_acceleration=False,
             # Sends events to the default event bus
             event_bridge_enabled=True,
         )

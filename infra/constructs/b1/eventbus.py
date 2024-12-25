@@ -47,3 +47,10 @@ class B1EventBus(Construct):
             parameter_name="/pubsub/event-bus/arn",
             string_value=self.event_bus.event_bus_arn,
         )
+
+        ssm.StringParameter(
+            scope=self,
+            id="EventBusName",
+            parameter_name="/pubsub/event-bus/name",
+            string_value=self.event_bus.event_bus_name,
+        )

@@ -26,9 +26,7 @@ class B1EventBus(Construct):
         self.event_bus.archive(
             id="Archive",
             description="PubSub Archive",
-            event_pattern=events.EventPattern(
-                account=[cdk.Aws.ACCOUNT_ID]
-            ),
+            event_pattern=events.EventPattern(account=[cdk.Aws.ACCOUNT_ID]),
             retention=cdk.Duration.days(90),
         )
 

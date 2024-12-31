@@ -37,9 +37,7 @@ class B1Firehose(Construct):
         # Read the kwargs
         bucket = kwargs["bucket"]
         event_bus = kwargs["event_bus"]
-        buffer_interval_in_seconds = kwargs.get(
-            "buffer_interval_in_seconds", 60
-        )
+        buffer_interval_in_seconds = kwargs.get("buffer_interval_in_seconds", 60)
         buffer_size_in_m_bs = kwargs.get("buffer_size_in_m_bs", 64)
 
         # Create Log Group and Log Stream for kinesis Firehose
@@ -144,9 +142,7 @@ class B1Firehose(Construct):
             scope=self,
             id="S3DeliveryStreamRule",
             event_bus=event_bus,
-            event_pattern=events.EventPattern(
-                account=[cdk.Aws.ACCOUNT_ID]
-            ),
+            event_pattern=events.EventPattern(account=[cdk.Aws.ACCOUNT_ID]),
             targets=[
                 targets.KinesisFirehoseStream(stream=delivery_stream),
             ],  # type: ignore
